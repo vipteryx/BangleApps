@@ -26,7 +26,7 @@
       Frequency: {
         value: settings.freq,
         min: 0,
-        max: 2,
+        max: 3,
         format: (v) => frequency[v],
         onchange: (v) => {
           settings.freq = v;
