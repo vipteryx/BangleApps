@@ -1,3 +1,4 @@
+
 (function () {
   // 0: off, 1: buzz, 2: beep, 3: both
   var FILE = "5er.json";
@@ -109,88 +110,88 @@
           break;
       }
       setTimeout(check, msLeft);
-  // ...
-  } else if (settings.freq === 3) {
-    if (
-      (m !== lastMinute && m === 0) ||
-      (m !== lastMinute && m === 5) ||
-      (m !== lastMinute && m === 10) ||
-      (m !== lastMinute && m === 15) ||
-      (m !== lastMinute && m === 20) ||
-      (m !== lastMinute && m === 25) ||
-      (m !== lastMinute && m === 30) ||
-      (m !== lastMinute && m === 35) ||
-      (m !== lastMinute && m === 40) ||
-      (m !== lastMinute && m === 45) ||
-      (m !== lastMinute && m === 50) ||
-      (m !== lastMinute && m === 55)
-    )
-      chime();
-    lastHour = h;
-    lastMinute = m;
-    // check again in 5 minutes
-    switch (true) {
-      case m / 5 >= 11:
-        var mLeft = 5 - (m - 55),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 10:
-        var mLeft = 5 - (m - 50),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 9:
-        var mLeft = 5 - (m - 45),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 8:
-        var mLeft = 5 - (m - 40),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 7:
-        var mLeft = 5 - (m - 35),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 6:
-        var mLeft = 5 - (m - 30),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 5:
-        var mLeft = 5 - (m - 25),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 4:
-        var mLeft = 5 - (m - 20),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-      case m / 5 >= 3:
-        var mLeft = 5 - (m - 15),
-          sLeft = mLeft * 60 - s,
-          msLeft = sLeft * 1000 - ms;
-        break;
-	  case m / 5 >= 2:
-	    var mLeft = 5 - (m - 10),
-	      sLeft = mLeft * 60 - s,
-	      msLeft = sLeft * 1000 - ms;
-	    break;
-	  case m / 5 >= 1:
-	    var mLeft = 5 - (m - 5),
-	      sLeft = mLeft * 60 - s,
-	      msLeft = sLeft * 1000 - ms;
-	    break;
-	case m / 5 < 1:
-	  var mLeft = 5 - m,
-	    sLeft = mLeft * 60 - s,
-	    msLeft = sLeft * 1000 - ms;
-	  break;
-     setTimeout(check, msLeft);
+    } else if (settings.freq === 3) {
+      if (
+        (m !== lastMinute && m === 0) ||
+        (m !== lastMinute && m === 5) ||
+        (m !== lastMinute && m === 10) ||
+        (m !== lastMinute && m === 15) ||
+        (m !== lastMinute && m === 20) ||
+        (m !== lastMinute && m === 25) ||
+        (m !== lastMinute && m === 30) ||
+        (m !== lastMinute && m === 35) ||
+        (m !== lastMinute && m === 40) ||
+        (m !== lastMinute && m === 45) ||
+        (m !== lastMinute && m === 50) ||
+        (m !== lastMinute && m === 55)
+      )
+        chime();
+      lastHour = h;
+      lastMinute = m;
+      // check again in 5 minutes
+      switch (true) {
+        case m / 5 >= 11:
+          var mLeft = 5 - (m - 55),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 10:
+          var mLeft = 5 - (m - 50),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 9:
+          var mLeft = 5 - (m - 45),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 8:
+          var mLeft = 5 - (m - 40),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 7:
+          var mLeft = 5 - (m - 35),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 6:
+          var mLeft = 5 - (m - 30),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 5:
+          var mLeft = 5 - (m - 25),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 4:
+          var mLeft = 5 - (m - 20),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 3:
+          var mLeft = 5 - (m - 15),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 2:
+          var mLeft = 5 - (m - 10),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 >= 1:
+          var mLeft = 5 - (m - 5),
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+        case m / 5 < 1:
+          var mLeft = 5 - m,
+            sLeft = mLeft * 60 - s,
+            msLeft = sLeft * 1000 - ms;
+          break;
+      }
+      setTimeout(check, msLeft);
     } else if (settings.freq === 4) {
       if (m !== lastMinute) chime();
       lastHour = h;
