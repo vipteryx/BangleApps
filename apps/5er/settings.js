@@ -7,7 +7,7 @@
   var FILE = "5er.json";
   var settings = {};
   const chimes = ["Off", "Buzz", "Beep", "Both"];
-  const frequency = ["60 min", "30 min", "15 min", "1 min"];
+  const frequency = ["60 min", "30 min", "15 min", "5 mins"];
 
   var showMainMenu = () => {
     E.showMenu({
