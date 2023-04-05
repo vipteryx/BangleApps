@@ -1,7 +1,7 @@
 {
   "id": "5er",
   "name": "5er",
-  "version": "0.01",
+  "version": "0.02",
   "description": "A fork of Chimer that adds a 5 minute interval",
   "icon": "widget.png",
   "type": "widget",
