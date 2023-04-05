@@ -1,16 +1,10 @@
-{
-  "id": "appClock",
+{ "id": "appClock",
   "name": "appClock",
-  "version": "0.01",
-  "description": "A simple clock that runs as an app, so you can do other stuff on your main clock.",
+  "version":"0.01",
+  "description": "A clock that runs as an app, so you can do other stuff on your main clock.",
   "icon": "app.png",
-  "type": "app",
-  "tags": "app",
-  "supports": ["BANGLEJS", "BANGLEJS2"],
-  "readme": "README.MD",
+  "tags": "tool",
+  "supports" : ["BANGLEJS2"],
   "storage": [
-    { "name": "appClock.app.js", "url": "app.js" },
-    { "name": "appClock.settings.js", "url": "settings.js" }
-  ],
-  "data": [{ "name": "appClock.json" }]
+    {"name":"appClock.app.js","url":"app.js"}]
 }
