@@ -1,10 +1,12 @@
 { "id": "appClock",
   "name": "appClock",
-  "version":"0.01",
+  "shortName": "appClock",
+  "version":"0.02",
   "description": "A clock that runs as an app, so you can do other stuff on your main clock.",
   "icon": "app.png",
   "tags": "tool",
   "supports" : ["BANGLEJS2"],
+  "readme": "README.md",
   "storage": [
     {"name":"appClock.app.js","url":"app.js"}]
 }
