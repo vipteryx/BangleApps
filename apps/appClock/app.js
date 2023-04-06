@@ -17,12 +17,17 @@ function drawTime(time) {
 	g.clear();
 	
 	//draw the time
-	g.setFont("Vector",20);
-	g.drawString(
-		time.hours + ":" + ("0" + time.minutes).substr(-2) + ":" 
+	g.setFont("Vector",25);
+	var timeString = time.hours + ":" + ("0" + time.minutes).substr(-2) + ":" 
 		+ ("0" + time.seconds).substr(-2), 30, 30);
-	
+	var x = g.centerX(timeString); // calculate center x-coordinate
+	var y = (g.getHeight() / 2) - 10; // subtract half of font size
+	g.drawString(timeString, x, y);
 }
+
+function drawTime(time) {
+  //clear the screen
+  g.clear();
 	
 //update the time and draw the screen
 function updateScreen(){
