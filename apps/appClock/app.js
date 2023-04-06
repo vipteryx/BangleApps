@@ -17,7 +17,7 @@ function drawTime(time) {
 	g.clear();
 	
 	//draw the time
-	g.setFont("Vector",40);
+	g.setFont("Vector",20);
 	g.drawString(
 		time.hours + ":" + ("0" + time.minutes).substr(-2) + ":" 
 		+ ("0" + time.seconds).substr(-2), 30, 30);
