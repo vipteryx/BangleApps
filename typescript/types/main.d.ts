@@ -90,6 +90,8 @@ type Widget = {
 };
 declare const WIDGETS: { [key: string]: Widget };
 
+type ShortBoolean = boolean | 0 | 1;
+
 type AccelData = {
   x: number;
   y: number;
@@ -153,13 +155,13 @@ type LCDMode =
   | "120x120"
   | "80x80"
 
-type BangleOptions = {
-  wakeOnBTN1: boolean;
-  wakeOnBTN2: boolean;
-  wakeOnBTN3: boolean;
-  wakeOnFaceUp: boolean;
-  wakeOnTouch: boolean;
-  wakeOnTwist: boolean;
+type BangleOptions<Boolean = boolean> = {
+  wakeOnBTN1: Boolean;
+  wakeOnBTN2: Boolean;
+  wakeOnBTN3: Boolean;
+  wakeOnFaceUp: Boolean;
+  wakeOnTouch: Boolean;
+  wakeOnTwist: Boolean;
   twistThreshold: number;
   twistMaxY: number;
   twistTimeout: number;
@@ -172,6 +174,12 @@ type BangleOptions = {
   lcdPowerTimeout: number;
   backlightTimeout: number;
   btnLoadTimeout: number;
+};
+
+type SetUIArg<Mode> = Mode | {
+  mode: Mode,
+  back?: () => void,
+  remove?: () => void,
 };
 
 type NRFFilters = {
@@ -294,6 +302,12 @@ type VariableSizeInformation = {
   name: string;
   size: number;
   more?: VariableSizeInformation;
+};
+
+type PipeOptions = {
+  chunkSize?: number,
+  end?: boolean,
+  complete?: () => void,
 };
 
 
@@ -450,6 +464,46 @@ declare class ESP32 {
    * @url http://www.espruino.com/Reference#l_ESP32_deepSleep
    */
   static deepSleep(us: number): void;
+
+  /**
+   * Put device in deepsleep state until interrupted by pin "pin".
+   * Eligible pin numbers are restricted to those [GPIOs designated
+   * as RTC GPIOs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary).
+   *
+   * @param {Pin} pin - Pin to trigger wakeup
+   * @param {number} level - Logic level to trigger
+   * @url http://www.espruino.com/Reference#l_ESP32_deepSleepExt0
+   */
+  static deepSleepExt0(pin: Pin, level: number): void;
+
+  /**
+   * Put device in deepsleep state until interrupted by pins in the "pinVar" array.
+   * The trigger "mode" determines the pin state which will wake up the device.
+   * Valid modes are:
+   * * `0: ESP_EXT1_WAKEUP_ALL_LOW` - all nominated pins must be set LOW to trigger wakeup
+   * * `1: ESP_EXT1_WAKEUP_ANY_HIGH` - any of nominated pins set HIGH will trigger wakeup
+   * Eligible pin numbers are restricted to those [GPIOs designated
+   * as RTC GPIOs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary).
+   *
+   * @param {any} pinVar - Array of Pins to trigger wakeup
+   * @param {number} mode - Trigger mode
+   * @url http://www.espruino.com/Reference#l_ESP32_deepSleepExt1
+   */
+  static deepSleepExt1(pinVar: any, mode: number): void;
+
+  /**
+   * Returns a variable identifying the cause of wakeup from deep sleep.
+   * Possible causes include:
+   * * `0: ESP_SLEEP_WAKEUP_UNDEFINED` - reset was not caused by exit from deep sleep
+   * * `2: ESP_SLEEP_WAKEUP_EXT0` - Wakeup caused by external signal using RTC_IO
+   * * `3: ESP_SLEEP_WAKEUP_EXT1` - Wakeup caused by external signal using RTC_CNTL
+   * * `4: ESP_SLEEP_WAKEUP_TIMER` - Wakeup caused by timer
+   * * `5: ESP_SLEEP_WAKEUP_TOUCHPAD` - Wakeup caused by touchpad
+   * * `6: ESP_SLEEP_WAKEUP_ULP` - Wakeup caused by ULP program
+   * @returns {number} The cause of the ESP32's wakeup from sleep
+   * @url http://www.espruino.com/Reference#l_ESP32_getWakeupCause
+   */
+  static getWakeupCause(): number;
 
   /**
    * Returns an object that contains details about the state of the ESP32 with the
@@ -795,6 +849,29 @@ declare class NRF {
   static on(event: "security", callback: (status: any) => void): void;
 
   /**
+   * Called when Bluetooth advertising starts or stops on Espruino
+   * @param {string} event - The event to listen to.
+   * @param {(isAdvertising: boolean) => void} callback - A function that is executed when the event occurs. Its arguments are:
+   * * `isAdvertising` Whether we are advertising or not
+   * @url http://www.espruino.com/Reference#l_NRF_advertising
+   */
+  static on(event: "advertising", callback: (isAdvertising: boolean) => void): void;
+
+  /**
+   * Called during the bonding process to update on status
+   * `status` is one of:
+   * * `"request"` - Bonding has been requested in code via `NRF.startBonding`
+   * * `"start"` - The bonding procedure has started
+   * * `"success"` - The bonding procedure has succeeded (`NRF.startBonding`'s promise resolves)
+   * * `"fail"` - The bonding procedure has failed (`NRF.startBonding`'s promise rejects)
+   * @param {string} event - The event to listen to.
+   * @param {(status: any) => void} callback - A function that is executed when the event occurs. Its arguments are:
+   * * `status` One of `'request'/'start'/'success'/'fail'`
+   * @url http://www.espruino.com/Reference#l_NRF_bond
+   */
+  static on(event: "bond", callback: (status: any) => void): void;
+
+  /**
    * Called with a single byte value when Espruino is set up as a HID device and the
    * computer it is connected to sends a HID report back to Espruino. This is usually
    * used for handling indications such as the Caps Lock LED.
@@ -985,15 +1062,17 @@ declare class NRF {
    * `options` is an object, which can contain:
    * ```
    * {
-   *   name: "Hello" // The name of the device
-   *   showName: true/false // include full name, or nothing
-   *   discoverable: true/false // general discoverable, or limited - default is limited
-   *   connectable: true/false // whether device is connectable - default is true
-   *   scannable : true/false // whether device can be scanned for scan response packets - default is true
-   *   interval: 600 // Advertising interval in msec, between 20 and 10000 (default is 375ms)
-   *   manufacturer: 0x0590 // IF sending manufacturer data, this is the manufacturer ID
-   *   manufacturerData: [...] // IF sending manufacturer data, this is an array of data
-   *   phy: "1mbps/2mbps/coded" // (NRF52840 only) use the long-range coded phy for transmission (1mbps default)
+   *   name: "Hello"              // The name of the device
+   *   showName: true/false       // include full name, or nothing
+   *   discoverable: true/false   // general discoverable, or limited - default is limited
+   *   connectable: true/false    // whether device is connectable - default is true
+   *   scannable : true/false     // whether device can be scanned for scan response packets - default is true
+   *   whenConnected : true/false // keep advertising when connected (nRF52 only)
+   *                              // switches to advertising as non-connectable when it is connected
+   *   interval: 600              // Advertising interval in msec, between 20 and 10000 (default is 375ms)
+   *   manufacturer: 0x0590       // IF sending manufacturer data, this is the manufacturer ID
+   *   manufacturerData: [...]    // IF sending manufacturer data, this is an array of data
+   *   phy: "1mbps/2mbps/coded"   // (NRF52840 only) use the long-range coded phy for transmission (1mbps default)
    * }
    * ```
    * Setting `connectable` and `scannable` to false gives the lowest power
@@ -1545,7 +1624,7 @@ declare class NRF {
    * @param {any} callback - A callback function to be called when the data is sent
    * @url http://www.espruino.com/Reference#l_NRF_sendHIDReport
    */
-  static sendHIDReport(data: any, callback: any): void;
+  static sendHIDReport(data: number[], callback?: () => void): void
 
   /**
    * Check if Apple Notification Center Service (ANCS) is currently active on the BLE
@@ -2274,7 +2353,7 @@ declare class Socket {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_Socket_pipe
    */
-  pipe(destination: any, options?: any): void;
+  pipe(destination: any, options?: PipeOptions): void
 
   /**
    * This function writes the `data` argument as a string. Data that is passed in
@@ -2469,7 +2548,7 @@ declare class httpSRq {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_httpSRq_pipe
    */
-  pipe(destination: any, options?: any): void;
+  pipe(dest: any, options?: PipeOptions): void
 }
 
 /**
@@ -2692,7 +2771,7 @@ declare class httpCRs {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_httpCRs_pipe
    */
-  pipe(destination: any, options?: any): void;
+  pipe(destination: any, options?: PipeOptions): void
 }
 
 /**
@@ -2906,20 +2985,11 @@ declare class Microbit {
 
 }
 
-/**
- * This is the File object - it allows you to stream data to and from files (As
- * opposed to the `require('fs').readFile(..)` style functions that read an entire
- * file).
- * To create a File object, you must type ```var fd =
- * E.openFile('filepath','mode')``` - see [E.openFile](#l_E_openFile) for more
- * information.
- * **Note:** If you want to remove an SD card after you have started using it, you
- * *must* call `E.unmountSD()` or you may cause damage to the card.
- * @url http://www.espruino.com/Reference#File
- */
-declare class File {
+interface FileConstructor {
 
+}
 
+interface File {
   /**
    * Close an open file.
    * @url http://www.espruino.com/Reference#l_File_close
@@ -2976,8 +3046,21 @@ declare class File {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_File_pipe
    */
-  pipe(destination: any, options?: any): void;
+  pipe(destination: any, options?: PipeOptions): void
 }
+
+/**
+ * This is the File object - it allows you to stream data to and from files (As
+ * opposed to the `require('fs').readFile(..)` style functions that read an entire
+ * file).
+ * To create a File object, you must type ```var fd =
+ * E.openFile('filepath','mode')``` - see [E.openFile](#l_E_openFile) for more
+ * information.
+ * **Note:** If you want to remove an SD card after you have started using it, you
+ * *must* call `E.unmountSD()` or you may cause damage to the card.
+ * @url http://www.espruino.com/Reference#File
+ */
+declare const File: FileConstructor
 
 /**
  * Class containing [Puck.js's](http://www.puck-js.com) utility functions.
@@ -3145,8 +3228,10 @@ declare class Puck {
    * Check out [the Puck.js page on the
    * accelerometer](http://www.espruino.com/Puck.js#on-board-peripherals) for more
    * information.
+   * **Note:** Puck.js cannot currently read every sample from the
+   * accelerometer at sample rates above 208Hz.
    *
-   * @param {number} samplerate - The sample rate in Hz, or undefined
+   * @param {number} samplerate - The sample rate in Hz, or `undefined` (default is 12.5 Hz)
    * @url http://www.espruino.com/Reference#l_Puck_accelOn
    */
   static accelOn(samplerate: number): void;
@@ -3519,7 +3604,7 @@ declare class Bangle {
    * @param {string} event - The event to listen to.
    * @param {(button: number, xy: any) => void} callback - A function that is executed when the event occurs. Its arguments are:
    * * `button` `1` for left, `2` for right
-   * * `xy` Object of form `{x,y}` containing touch coordinates (if the device supports full touch). Clipped to 0..175 (LCD pixel coordinates) on firmware 2v13 and later.
+   * * `xy` Object of form `{x,y,type}` containing touch coordinates (if the device supports full touch). Clipped to 0..175 (LCD pixel coordinates) on firmware 2v13 and later.`type` is only available on Bangle.js 2 and is an integer, either 0 for swift touches or 2 for longer ones.
    * @url http://www.espruino.com/Reference#l_Bangle_touch
    */
   static on(event: "touch", callback: TouchCallback): void;
@@ -3776,6 +3861,9 @@ declare class Bangle {
    *   and polling rate may not be exact. The algorithm's filtering is tuned for
    *   20-40ms poll intervals, so higher/lower intervals may effect the reliability
    *   of the BPM reading.
+   * * `hrmSportMode` - on the newest Bangle.js 2 builds with with the proprietary
+   *   heart rate algorithm, this is the sport mode passed to the algorithm. See `libs/misc/vc31_binary/algo.h`
+   *   for more info. 0 = normal (default), 1 = running, 2 = ...
    * * `seaLevelPressure` (Bangle.js 2) Normally 1013.25 millibars - this is used for
    *   calculating altitude with the pressure sensor
    * Where accelerations are used they are in internal units, where `8192 = 1g`
@@ -3783,7 +3871,7 @@ declare class Bangle {
    * @param {any} options
    * @url http://www.espruino.com/Reference#l_Bangle_setOptions
    */
-  static setOptions(options: { [key in keyof BangleOptions]?: BangleOptions[key] }): void;
+  static setOptions(options: { [key in keyof BangleOptions]?: BangleOptions<ShortBoolean>[key] }): void;
 
   /**
    * Return the current state of options as set by `Bangle.setOptions`
@@ -3844,7 +3932,7 @@ declare class Bangle {
    * @returns {boolean} Is HRM on?
    * @url http://www.espruino.com/Reference#l_Bangle_setHRMPower
    */
-  static setHRMPower(isOn: boolean, appID: string): boolean;
+  static setHRMPower(isOn: ShortBoolean, appID: string): boolean;
 
   /**
    * Is the Heart rate monitor powered?
@@ -3868,7 +3956,7 @@ declare class Bangle {
    * @returns {boolean} Is the GPS on?
    * @url http://www.espruino.com/Reference#l_Bangle_setGPSPower
    */
-  static setGPSPower(isOn: boolean, appID: string): boolean;
+  static setGPSPower(isOn: ShortBoolean, appID: string): boolean;
 
   /**
    * Is the GPS powered?
@@ -3900,7 +3988,7 @@ declare class Bangle {
    * @returns {boolean} Is the Compass on?
    * @url http://www.espruino.com/Reference#l_Bangle_setCompassPower
    */
-  static setCompassPower(isOn: boolean, appID: string): boolean;
+  static setCompassPower(isOn: ShortBoolean, appID: string): boolean;
 
   /**
    * Is the compass powered?
@@ -3928,7 +4016,7 @@ declare class Bangle {
    * @returns {boolean} Is the Barometer on?
    * @url http://www.espruino.com/Reference#l_Bangle_setBarometerPower
    */
-  static setBarometerPower(isOn: boolean, appID: string): boolean;
+  static setBarometerPower(isOn: ShortBoolean, appID: string): boolean;
 
   /**
    * Is the Barometer powered?
@@ -4294,7 +4382,11 @@ declare class Bangle {
    * @param {any} callback - A function with one argument which is the direction
    * @url http://www.espruino.com/Reference#l_Bangle_setUI
    */
-  static setUI(type?: "updown" | "leftright" | "clock" | "clockupdown" | { mode: "custom"; back?: () => void; touch?: TouchCallback; swipe?: SwipeCallback; drag?: DragCallback; btn?: (n: number) => void, remove?: () => void, clock?: boolean }, callback?: (direction?: -1 | 1) => void): void;
+  static setUI(type?: undefined): void;
+  static setUI(type: SetUIArg<"updown" | "leftright">, callback: (direction?: -1 | 1) => void): void;
+  static setUI(type: SetUIArg<"clock">): void;
+  static setUI(type: SetUIArg<"clockupdown">, callback?: (direction: -1 | 1) => void): void;
+  static setUI(type: SetUIArg<"custom"> & { touch?: TouchCallback; swipe?: SwipeCallback; drag?: DragCallback; btn?: (n: 1 | 2 | 3) => void; clock?: boolean | 0 | 1 }): void;
 
   /**
    * @url http://www.espruino.com/Reference#l_Bangle_setUI
@@ -4316,7 +4408,7 @@ declare class Bangle {
    */
   static appRect: { x: number, y: number, w: number, h: number, x2: number, y2: number };
 
-  static CLOCK: boolean;
+  static CLOCK: ShortBoolean;
   static strokes: undefined | { [key: string]: Unistroke };
 }
 
@@ -5545,7 +5637,9 @@ declare class Graphics<IsBuffer extends boolean = boolean> {
    *   `width,height,bpp,[transparent,]image_bytes...`. If a transparent colour is
    *   specified the top bit of `bpp` should be set.
    * * An ArrayBuffer Graphics object (if `bpp<8`, `msb:true` must be set) - this is
-   *   disabled on devices without much flash memory available
+   *   disabled on devices without much flash memory available. If a Graphics object
+   *   is supplied, it can also contain transparent/palette fields as if it were
+   *   an image.
    * Draw an image at the specified position.
    * * If the image is 1 bit, the graphics foreground/background colours will be
    *   used.
@@ -5626,6 +5720,9 @@ declare class Graphics<IsBuffer extends boolean = boolean> {
    * * Is 8 bpp *OR* the `{msb:true}` option was given
    * * No other format options (zigzag/etc) were given
    * Otherwise data will be copied, which takes up more space and may be quite slow.
+   * If the `Graphics` object contains `transparent` or `pelette` fields,
+   * [as you might find in an image](http://www.espruino.com/Graphics#images-bitmaps),
+   * those will be included in the generated image too.
    *
    * @param {any} type - The type of image to return. Either `object`/undefined to return an image object, or `string` to return an image string
    * @returns {any} An Image that can be used with `Graphics.drawImage`
@@ -5747,6 +5844,19 @@ declare class Graphics<IsBuffer extends boolean = boolean> {
    * @url http://www.espruino.com/Reference#l_Graphics_transformVertices
    */
   transformVertices(arr: number[], transformation: { x?: number, y?: number, scale?: number, rotate?: number } | [number, number, number, number, number, number]): number[];
+
+  /**
+   * Flood fills the given Graphics instance out from a particular point.
+   * **Note:** This only works on Graphics instances that support readback with `getPixel`. It
+   * is also not capable of filling over dithered patterns (eg non-solid colours on Bangle.js 2)
+   *
+   * @param {number} x - X coordinate to start from
+   * @param {number} y - Y coordinate to start from
+   * @param {any} col - The color to fill with (if undefined, foreground is used)
+   * @returns {any} The instance of Graphics this was called on, to allow call chaining
+   * @url http://www.espruino.com/Reference#l_Graphics_floodFill
+   */
+  floodFill(x: number, y: number, col: any): Graphics;
 
   /**
    * Returns an object of the form:
@@ -7972,7 +8082,7 @@ declare class E {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_E_pipe
    */
-  static pipe(source: any, destination: any, options?: { chunkSize?: number, end?: boolean, complete?: () => void }): void
+  static pipe(source: any, destination: any, options?: PipeOptions): void
 
   /**
    * Create an ArrayBuffer from the given string. This is done via a reference, not a
@@ -8171,6 +8281,10 @@ declare class E {
   /**
    * Dump any locked variables that aren't referenced from `global` - for debugging
    * memory leaks only.
+   * **Note:** This does a linear scan over memory, finding variables
+   * that are currently locked. In some cases it may show variables
+   * like `Unknown 66` which happen when *part* of a string has ended
+   * up placed in memory ahead of the String that it's part of. See https://github.com/espruino/Espruino/issues/2345
    * @url http://www.espruino.com/Reference#l_E_dumpLockedVars
    */
   static dumpLockedVars(): void;
@@ -8603,12 +8717,36 @@ declare class E {
    */
   static decodeUTF8(str: string, lookup: string[], replaceFn: string | ((charCode: number) => string)): string;
 
+  /**
+   * When using events with `X.on('foo', function() { ... })`
+   * and then `X.emit('foo')` you might want to stop subsequent
+   * event handlers from being executed.
+   * Calling this function doing the execution of events will
+   * ensure that no subsequent event handlers are executed.
+   * ```
+   * var X = {}; // in Espruino all objects are EventEmitters
+   * X.on('foo', function() { print("A"); })
+   * X.on('foo', function() { print("B"); E.stopEventPropagation(); })
+   * X.on('foo', function() { print("C"); })
+   * X.emit('foo');
+   * // prints A,B but not C
+   * ```
+   * @url http://www.espruino.com/Reference#l_E_stopEventPropagation
+   */
+  static stopEventPropagation(): void;
+
 
 }
 
 /**
  * This class provides a software-defined OneWire master. It is designed to be
  * similar to Arduino's OneWire library.
+ * **Note:** OneWire commands are very timing-sensitive, and on nRF52 devices
+ * (Bluetooth LE Espruino boards) the bluetooth stack can get in the way. Before
+ * version 2v18 of Espruino OneWire could be unreliable, but as of firmware 2v18
+ * Espruino now schedules OneWire accesses with the bluetooth stack to ensure it doesn't interfere.
+ * OneWire is now reliable but some functions such as `OneWire.search` can now take
+ * a while to execute (around 1 second).
  * @url http://www.espruino.com/Reference#OneWire
  */
 declare class OneWire {
@@ -8901,6 +9039,9 @@ interface Object {
    * o.emit('answer', 44);
    * // nothing printed
    * ```
+   * If you have more than one handler for an event, and you'd
+   * like that handler to stop the event being passed to other handlers
+   * then you can call `E.stopEventPropagation()` in that handler.
    *
    * @param {any} event - The name of the event, for instance 'data'
    * @param {any} listener - The listener to call when this event is received
@@ -8946,10 +9087,10 @@ interface Object {
    * ```
    * For more information see `Object.on`
    *
-   * @param {any} event - The name of the event, for instance `'data'`. If not specified *all* listeners are removed.
+   * @param {any} [event] - [optional] The name of the event, for instance `'data'`. If not specified *all* listeners are removed.
    * @url http://www.espruino.com/Reference#l_Object_removeAllListeners
    */
-  removeAllListeners(event: any): void;
+  removeAllListeners(event?: any): void;
 }
 
 /**
@@ -9668,6 +9809,19 @@ declare class StorageFile {
    * @url http://www.espruino.com/Reference#l_StorageFile_erase
    */
   erase(): void;
+
+  /**
+   * Pipe this file to a stream (an object with a 'write' method)
+   *
+   * @param {any} destination - The destination file/stream that will receive content from the source.
+   * @param {any} [options]
+   * [optional] An object `{ chunkSize : int=32, end : bool=true, complete : function }`
+   * chunkSize : The amount of data to pipe from source to destination at a time
+   * complete : a function to call when the pipe activity is complete
+   * end : call the 'end' function on the destination when the source is finished
+   * @url http://www.espruino.com/Reference#l_StorageFile_pipe
+   */
+  pipe(destination: any, options?: PipeOptions): void
 }
 
 interface processConstructor {
@@ -10002,7 +10156,13 @@ declare class Serial {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_Serial_pipe
    */
-  pipe(destination: any, options?: any): void;
+  pipe(destination: any, options?: PipeOptions): void
+
+  /**
+   * Flush this serial stream (pause execution until all data has been sent)
+   * @url http://www.espruino.com/Reference#l_Serial_flush
+   */
+  flush(): void;
 }
 
 interface StringConstructor {
@@ -11437,10 +11597,11 @@ declare function setWatch(func: ((arg: { state: boolean, time: number, lastTime:
  * Clear the Watch that was created with setWatch. If no parameter is supplied, all watches will be removed.
  * To avoid accidentally deleting all Watches, if a parameter is supplied but is `undefined` then an Exception will be thrown.
  *
- * @param {any} id - The id returned by a previous call to setWatch. **Only one argument is allowed.**
+ * @param {any} id - The id returned by a previous call to setWatch. **Only one argument is allowed.** (or pass nothing to clear all watches)
  * @url http://www.espruino.com/Reference#l__global_clearWatch
  */
 declare function clearWatch(id: number): void;
+declare function clearWatch(): void;
 
 /**
  * A variable containing the arguments given to the function:
@@ -11991,6 +12152,10 @@ declare module "neopixel" {
    * white). These are still supported but the array of data supplied must still be a
    * multiple of 3 bytes long. Just round the size up - it won't cause any problems.
    * * On some platforms like STM32, pins capable of hardware SPI MOSI are required.
+   * * On STM32, `neopixel.write` chooses a hardware SPI device to output the signal on
+   * and uses that. However in order to avoid spikes in the output, if that hardware device is *already
+   * initialised* it will not be re-initialised. This means that if the SPI device was already in use,
+   * you may have to use `SPIx.setup({baud:3200000, mosi:the_pin})` to force it to be re-setup on the pin.
    * * Espruino devices tend to have 3.3v IO, while WS2812/etc run off of 5v. Many
    * WS2812 will only register a logic '1' at 70% of their input voltage - so if
    * powering them off 5v you will not be able to send them data reliably. You can
@@ -12915,7 +13080,7 @@ declare module "fs" {
    * end : call the 'end' function on the destination when the source is finished
    * @url http://www.espruino.com/Reference#l_fs_pipe
    */
-  function pipe(source: any, destination: any, options?: any): void;
+  function pipe(destination: any, options?: PipeOptions): void
 }
 
 /**
@@ -13151,7 +13316,7 @@ declare module "Storage" {
    * @returns {any} An object containing parsed JSON from the file, or undefined
    * @url http://www.espruino.com/Reference#l_Storage_readJSON
    */
-  function readJSON(name: string, noExceptions: boolean): any;
+  function readJSON(name: string, noExceptions: ShortBoolean): any;
 
   /**
    * Read a file from the flash storage area that has been written with
@@ -13272,7 +13437,7 @@ declare module "Storage" {
 
   /**
    * The Flash Storage system is journaling. To make the most of the limited write
-   * cycles of Flash memory, Espruino marks deleted/replaced files as garbage and
+   * cycles of Flash memory, Espruino marks deleted/replaced files as garbage/trash files and
    * moves on to a fresh part of flash memory. Espruino only fully erases those files
    * when it is running low on flash, or when `compact` is called.
    * `compact` may fail if there isn't enough RAM free on the stack to use as swap
@@ -13311,7 +13476,7 @@ declare module "Storage" {
    *   fileBytes // How many bytes of allocated files do we have?
    *   fileCount // How many allocated files do we have?
    *   trashBytes // How many bytes of trash files do we have?
-   *   trashCount // How many trash files do we have?
+   *   trashCount // How many trash files do we have? (can be cleared with .compact)
    * }
    * ```
    * @returns {any} An object containing info about the current Storage system
