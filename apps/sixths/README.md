@@ -24,15 +24,34 @@ minutes, real distance will be usually higher than approximation.
 
 Useful gestures:
 
-F -- disable GPS.
-G -- enable GPS for 4 hours.
-N -- take a note and write it to the log.
+ B -- "Battery", show/buzz battery info
+D -- "Down", previous waypoint
+F -- "oFf", disable GPS.
+G -- "Gps", enable GPS for 4 hours in low power mode.
+I -- "Info", toggle info display
+ L -- "aLtimeter", load altimeter app
+M -- "Mark", create mark from current position
+N -- "Note", take a note and write it to the log.
+ O -- "Orloj", run orloj app
+ R -- "Run", run "runplus" app
+S -- "Speed", enable GPS for 30 minutes in high power mode.
+ T -- "Time", buzz current time
+U -- "Up", next waypoint
+Y -- "compass", reset compass
 
 When application detects watch is being worn, it will use vibrations
 to communicate back to the user.
 
+B -- battery low.
 E -- acknowledge, gesture understood.
 T -- start of new hour.
+
+Three colored dots may appear on display. North is on the 12 o'clock
+position (top of the display).
+
+red: this is direction to the waypoint.
+green: this is direction you are moving into, according to GPS.
+blue: this is direction top of watch faces, according to the compass.
 
 Written by: [Pavel Machek](https://github.com/pavelmachek)
 
@@ -49,3 +68,32 @@ night.
 I'd like to make display nicer, and likely more dynamic, displaying
 whatever application believes is most important at the time (and
 possibly allowing scrolling).
+
+Todo:
+
+*) only turn on compass when needed
+
+*) only warn about battery low when it crosses thresholds, update
+battery low message
+
+*) rename "show" to something else -- it collides with built-in
+
+*) adjust clock according to GPS
+
+*) show something more reasonable than (NOTEHERE).
+
+*) hide messages after timeout.
+
+*) show route lengths after the fact
+
+*) implement longer recording than "G".
+
+*) Probably T should be G.
+
+*) sum gps distances for a day
+
+*) allow setting up home altitude, or at least disable auto-calibration
+
+*) show time-to-sunset / sunrise?
+
+*) one-second updates when gps is active
